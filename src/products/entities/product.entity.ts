@@ -1,4 +1,11 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { ProductDetailsEntity } from './product-details.entity';
 
 @Entity({ name: 'products' })
 export class ProductEntity {
@@ -13,4 +20,8 @@ export class ProductEntity {
 
   @Column('float')
   price: number;
+
+  @OneToOne(() => ProductDetailsEntity)
+  @JoinColumn()
+  productDetails: ProductDetailsEntity;
 }

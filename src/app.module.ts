@@ -17,7 +17,7 @@ import { ProductsModule } from './products/products.module';
       password: 'root',
       database: 'nest-db',
       entities: ['dist/**/*.entity.js'],
-      synchronize: true,
+      synchronize: false,
       logging: true,
     }),
     ProductsModule,

@@ -3,6 +3,13 @@ export interface Product {
   name: string;
   qty: number;
   price: number;
+  productDetails: ProductDetails;
 }
-
-export type UpdateProduct = Omit<Product, 'id'>;
+export interface ProductDetails {
+  part_number: string;
+  dimension: string;
+  weight: number;
+  manufacturer: string;
+  origin: string;
+}
+export type UpdateProduct = Omit<Product, 'id' | 'productDetails'>;
