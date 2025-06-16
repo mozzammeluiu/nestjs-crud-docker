@@ -6,10 +6,14 @@ export interface Product {
   productDetails: ProductDetails;
 }
 export interface ProductDetails {
+  id?: number;
   part_number: string;
   dimension: string;
   weight: number;
   manufacturer: string;
   origin: string;
 }
-export type UpdateProduct = Omit<Product, 'id' | 'productDetails'>;
+
+export type UpdateProduct = Partial<
+  Pick<Product, 'name' | 'qty' | 'price'> & ProductDetails
+>;

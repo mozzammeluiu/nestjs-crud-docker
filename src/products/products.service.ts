@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Product, UpdateProduct } from './interfaces/product.interface';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProductEntity } from './entities/product.entity';
-import { DeleteResult, Repository, UpdateResult } from 'typeorm';
+import { Repository } from 'typeorm';
 import { CreateProductDto } from './dto/create.product.dto';
 import { ProductDetailsEntity } from './entities/product-details.entity';
 
@@ -32,22 +32,66 @@ export class ProductsService {
     return { ...newProduct, productDetails };
   }
   async findAll(): Promise<Product[]> {
-    return await this.productRepository.find();
+    return await this.productRepository.find({ relations: ['productDetails'] });
   }
   async findOne(id: number): Promise<Product> {
-    const result = await this.productRepository.findOneBy({ id });
+    const result = await this.productRepository.findOne({
+      where: { id },
+      relations: ['productDetails'],
+    });
     if (!result) {
       throw new NotFoundException('Could not find any product');
     }
     return result;
   }
-  async delete(id: number): Promise<DeleteResult> {
-    return await this.productRepository.delete(id);
+  async delete(id: number): Promise<any> {
+    const result = await this.productRepository.findOne({
+      where: { id },
+      relations: ['productDetails'],
+    });
+    if (result?.productDetails?.id) {
+      await this.productDetailsRepository.delete(id);
+    }
+    await this.productRepository.delete(id);
+    return {
+      msg: `Product is deleted with id : ${id} and product details with id : ${result?.productDetails?.id}`,
+    };
   }
-  async update(
-    id: number,
-    recordToUpdate: UpdateProduct,
-  ): Promise<UpdateResult> {
-    return await this.productRepository.update(id, recordToUpdate);
+  async update(id: number, recordToUpdate: UpdateProduct): Promise<Product> {
+    const product = await this.productRepository.findOne({
+      where: { id },
+      relations: ['productDetails'],
+    });
+    console.log(product, 'product');
+    if (!product) {
+      throw new NotFoundException('Could not find any product with this id');
+    }
+    const { qty, price, name } = recordToUpdate;
+    this.productRepository.merge(product, {
+      qty,
+      price,
+      name,
+    });
+    const updatedProduct = await this.productRepository.save(product);
+    const { part_number, dimension, weight, manufacturer, origin } =
+      recordToUpdate;
+    const foundDetails = await this.productDetailsRepository.findOne({
+      where: {
+        id: product.productDetails.id,
+      },
+    });
+    if (foundDetails) {
+      this.productDetailsRepository.merge(foundDetails, {
+        part_number,
+        dimension,
+        weight,
+        manufacturer,
+        origin,
+      });
+    }
+    const updatedDetails = await this.productDetailsRepository.save(
+      foundDetails || {},
+    );
+    return { ...updatedProduct, productDetails: updatedDetails };
   }
 }
